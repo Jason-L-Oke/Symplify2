@@ -1,5 +1,5 @@
 # Simulation of Symplify 2 sample size  ----------------------------------------
-# COX PH with Heaviside function 
+# Log Rank test version
 
 rm(list = ls())
 
