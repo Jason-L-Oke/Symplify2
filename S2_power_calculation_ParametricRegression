@@ -1,0 +1,73 @@
+# Simulation of Symplify 2 sample size  ----------------------------------------
+# Parametric regression 
+# Lognormal is AFT (accelerated failure time) but not proportional odds model
+
+rm(list = ls())
+
+mu.hat <- 4.09; sig.hat <- 1.13 
+
+# median diagnostic interval
+exp(mu.hat)
+qlnorm(0.75,mu.hat, sig.hat)
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+
+M <- 25000
+N <- 8050 
+p <- r <- mr <- numeric(M)
+
+set.seed(111)
+
+for (m in 1:M){
+  
+  # number of cancers expected in each group
+  n1 <- n2 <- N * prev
+  
+  # simulate diagnostic intervals for the 2 randomised groups (equal alloc)
+  usual.care <- rlnorm(n1, meanlog = mu.hat, sdlog = sig.hat)
+  mcd.arm <- rlnorm(n2, meanlog = mu.hat, sdlog = sig.hat)
+  
+  # this is the 'effect' of the MCED test
+  # test 0 = neg, 1 = pos, with prob = se.
+  mced_pos <- rbinom(n1,1,se)
+  
+  # long interval and test positive
+  ind <- mcd.arm > ndays & mced_pos == 1
+  
+  # replace relevant intervals with reduced intervals
+  mcd.arm <- replace(mcd.arm, ind , pmax(ndays,mcd.arm[ind]*effectsize))
+  
+  # truncate at 12 months 
+  mcd.arm <- mcd.arm[mcd.arm <= 365.25]
+  usual.care <- usual.care[usual.care <= 365.25]
+  
+  # set up for parametric regression model
+  n1 <- length(usual.care); n2 <- length(mcd.arm)
+  times <- c(usual.care, mcd.arm) 
+  trt <- c(rep(1,n1),rep(2,n2))
+  
+  # parametric regression with lognormal hazard function
+  parmod <- survreg(Surv(time = times) ~ trt, dist = "lognormal")
+  parmod.su <- summary(parmod)
+  
+  # save the p value from model 
+  p[m] <- parmod.su$table[2,4]
+  
+  # save the hazard ration from the test 
+  r[m] <- exp(parmod.su$coefficients[2])
+  
+  # difference in median. 
+  mr[m] <- median(mcd.arm) - median(usual.care)
+}
+
+# power 
+signif(mean(p < 0.05),2)
+
+# mean acceleration factor 
+signif(mean(r),2)
+
+# mean difference in median
+signif(mean(mr),2)
