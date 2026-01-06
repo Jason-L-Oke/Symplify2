@@ -1,0 +1,80 @@
+# Simulation of Symplify 2 sample size  ----------------------------------------
+# COX PH with Heaviside function 
+
+rm(list = ls())
+
+mu.hat <- 4.09; sig.hat <- 1.13 
+
+# median diagnostic interval
+exp(mu.hat)
+qlnorm(0.75,mu.hat, sig.hat)
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+
+M <- 50000
+N <- 8050 
+p <- r <- mr <- numeric(M)
+
+set.seed(111)
+
+for (m in 1:M){
+  
+  # number of cancers expected in each group
+  n1 <- n2 <- N * prev
+  
+  # simulate diagnostic intervals for the 2 randomised groups (equal alloc)
+  usual.care <- rlnorm(n1, meanlog = mu.hat, sdlog = sig.hat)
+  mcd.arm <- rlnorm(n2, meanlog = mu.hat, sdlog = sig.hat)
+  
+  # this is the 'effect' of the MCED test
+  # test 0 = neg, 1 = pos, with prob = se.
+  mced_pos <- rbinom(n1,1,se)
+  
+  # long interval and test positive
+  ind <- mcd.arm > ndays & mced_pos == 1
+  
+  # replace relevant intervals with reduced intervals
+  mcd.arm <- replace(mcd.arm, ind , pmax(ndays,mcd.arm[ind]*effectsize))
+  
+  # truncate at 12 months 
+  mcd.arm <- mcd.arm[mcd.arm <= 365.25]
+  usual.care <- usual.care[usual.care <= 365.25]
+  
+  # create the counting process data and heaviside functions
+  n1 <- length(usual.care); n2 <- length(mcd.arm)
+  times <- c(usual.care, mcd.arm); 
+  status <- rep(1,n1+n2); ids <- 1:(n1+n2); start <- rep(0,n1+n2)
+  trt <- c(rep(1,n1),rep(2,n2))
+  coxdt <- data.frame(start,times,status,ids,trt)
+  split.coxdt <- survSplit(coxdt,cut = 42,end="times",event="status",start="start")
+  
+  split.coxdt <- within(split.coxdt,{
+    hv1  = ifelse(times <= 42, trt, 0)
+    hv2  = ifelse(times >  42, trt, 0)
+  })
+  
+  # Cox model with time dependent covariates (Heaviside function at 42 days)
+  coxmod <- coxph(Surv(start,times,status) ~ trt + hv2 + cluster(ids), data = split.coxdt)
+  coxmod.su <- summary(coxmod)
+  
+  # save the p value from the test
+  p[m] <- coxmod.su$coefficients[1,6]
+  
+  # save the hazard ration from the test 
+  r[m] <- coxmod.su$coefficients[1,2]
+  
+  # difference in median. 
+  mr[m] <- median(mcd.arm) - median(usual.care)
+}
+
+# power 
+signif(mean(p < 0.05),2)
+
+# mean rate ratio 
+signif(mean(r),2)
+
+# mean difference in median
+signif(mean(mr),2)
