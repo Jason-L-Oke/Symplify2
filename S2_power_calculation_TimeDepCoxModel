@@ -63,7 +63,7 @@ for (m in 1:M){
   # save the p value from the test
   p[m] <- coxmod.su$coefficients[1,6]
   
-  # save the hazard ration from the test 
+  # save the hazard ratio from the test 
   r[m] <- coxmod.su$coefficients[1,2]
   
   # difference in median. 
@@ -73,7 +73,7 @@ for (m in 1:M){
 # power 
 signif(mean(p < 0.05),2)
 
-# mean rate ratio 
+# mean hazard ratio 
 signif(mean(r),2)
 
 # mean difference in median
