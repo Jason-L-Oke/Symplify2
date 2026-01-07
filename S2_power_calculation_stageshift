@@ -1,0 +1,88 @@
+# power to detect stage shift 
+rm(list = ls())
+
+mu.hat <- 4.09; sig.hat <- 1.13 
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+
+M <- 25000
+N <- 8050 
+p1 <- p2 <- d <- cis <- numeric(M)
+
+ref.probs <- c(0.184,0.161,0.225,0.43)
+
+mcd.probs <- c(0.184 + 0.161*0.04,
+               0.161*0.96 + 0.225*0.17, 
+               0.225*0.83 + (0.43*0.25),
+               0.43*0.75)
+
+stopifnot(sum(mcd.probs)==1)
+
+set.seed(112)
+
+for (m in 1:M){
+  
+  n1 <- n2 <- N * prev
+  
+  # simulate diagnostic intervals for the 2 randomised groups (equal alloc)
+  usual.care <- rlnorm(n1, meanlog = mu.hat, sdlog = sig.hat)
+  mcd.arm <- rlnorm(n2, meanlog = mu.hat, sdlog = sig.hat)
+  
+  # this is the 'effect' of the MCED test
+  # test 0 = neg, 1 = pos, with prob = se.
+  mced_pos <- rbinom(n1,1,se)
+  
+  # long interval and test positive
+  ind <- mcd.arm > ndays & mced_pos == 1
+  
+  # replace relevant intervals with reduced intervals
+  mcd.arm <- replace(mcd.arm, ind , pmax(ndays,mcd.arm[ind]*effectsize))
+  
+  # truncate at 12 months 
+  mcd.arm <- mcd.arm[mcd.arm <= 365.25]
+  usual.care <- usual.care[usual.care <= 365.25]
+  
+  # number of events in each arm and person-days. 
+  n.mcd <- length(mcd.arm) ;n.uc <- length(usual.care)
+
+  mcd.arm <- rmultinom(1,n.mcd,prob = mcd.probs)
+  uc.arm <- rmultinom(1,n.uc,prob = ref.probs)
+  
+  # stage 4 shift 
+  ns4s <- c(uc.arm[4],mcd.arm[4]) 
+  
+  ptests4 <- prop.test(x = ns4s,n = c(n.uc,n.mcd))
+  
+  p1[m] <- ptests4$p.value
+  
+  # Late stage shift (stage III + IV) 
+  ns34s <- c(sum(uc.arm[3:4]),sum(mcd.arm[3:4])) 
+  
+  ptests34 <- prop.test(x = ns34s, n = c(n.uc,n.mcd))
+  
+  p2[m] <- ptests34$p.value
+  
+  # average difference in stage 4 proportions
+  d[m] <- diff(ptests4$estimate)
+
+  # average confidence interval
+  cis[m] <- diff(ptests4$conf.int)
+}
+
+# power of stage 4 shift 
+signif(mean(p1 < 0.05),3)
+
+# late stage shift 
+signif(mean(p2 < 0.05),3)
+
+# average difference in s4 proportions
+mean(d)
+
+# average width of confidence interval 
+mean(cis)
+
+# off-the shelf power calculation. (318 in each group for 80% power)
+power.prop.test(p1 = 0.43, p2 = 0.43*0.75, power = 0.8)
