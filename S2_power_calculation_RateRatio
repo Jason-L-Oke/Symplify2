@@ -1,7 +1,7 @@
 # Simulation of Symplify 2 sample size  ----------------------------------------
 rm(list = ls())
 
-mu.hat <- 4.09; sig.hat <- 1.13 
+mu.hat <- 4.08; sig.hat <- 1.13 
 
 # median diagnostic interval
 exp(mu.hat)
@@ -44,13 +44,13 @@ for (m in 1:M){
     # number of events in each arm and person-days. 
     n.mcd <- length(mcd.arm) ;n.uc <- length(usual.care)
     t.mcd <- sum(mcd.arm); t.uc <- sum(usual.care)
+ 
+    # hypothesis test
+    pt <- poisson.test(x = c(n.uc,n.mcd), T = c(t.uc, t.mcd))
 
     # confidence interval width 
     lb[m] <- pt$conf.int[1]
     ub[m] <- pt$conf.int[2]
-  
-    # hypothesis test
-    pt <- poisson.test(x = c(n.uc,n.mcd), T = c(t.uc, t.mcd))
     
     # save the p value from the test
     p[m] <- pt$p.value
