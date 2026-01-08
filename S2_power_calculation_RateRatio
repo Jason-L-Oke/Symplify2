@@ -14,7 +14,7 @@ effectsize <- 0.5
 
 M <- 50000
 N <- 8050 
-p <- r <- mr <- numeric(M)
+p <- r <- mr <- lb <- ub <- numeric(M)
 
 set.seed(111)
 
@@ -44,7 +44,11 @@ for (m in 1:M){
     # number of events in each arm and person-days. 
     n.mcd <- length(mcd.arm) ;n.uc <- length(usual.care)
     t.mcd <- sum(mcd.arm); t.uc <- sum(usual.care)
-    
+
+    # confidence interval width 
+    lb[m] <- pt$conf.int[1]
+    ub[m] <- pt$conf.int[2]
+  
     # hypothesis test
     pt <- poisson.test(x = c(n.uc,n.mcd), T = c(t.uc, t.mcd))
     
@@ -63,6 +67,12 @@ signif(mean(p < 0.05),2)
 
 # mean rate ratio 
 signif(mean(r),2)
+
+# mean lower bound 
+signif(mean(lb),2)
+
+# mean upper bound 
+signif(mean(ub),2)
 
 # mean difference in median
 signif(mean(mr),2)
