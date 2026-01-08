@@ -10,7 +10,7 @@ effectsize <- 0.5
 
 M <- 25000
 N <- 8050 
-p1 <- p2 <- d <- cis <- numeric(M)
+p1 <- p2 <- d <- ub1 <- lb1 <- ub2 <- lb2 <- numeric(M)
 
 ref.probs <- c(0.184,0.161,0.225,0.43)
 
@@ -52,24 +52,28 @@ for (m in 1:M){
   uc.arm <- rmultinom(1,n.uc,prob = ref.probs)
   
   # stage 4 shift 
-  ns4s <- c(uc.arm[4],mcd.arm[4]) 
+  ns4s <- c(mcd.arm[4],uc.arm[4]) 
   
-  ptests4 <- prop.test(x = ns4s,n = c(n.uc,n.mcd))
+  ptests4 <- prop.test(x = ns4s,n = c(n.mcd,n.uc))
   
   p1[m] <- ptests4$p.value
   
   # Late stage shift (stage III + IV) 
-  ns34s <- c(sum(uc.arm[3:4]),sum(mcd.arm[3:4])) 
+  ns34s <- c(sum(mcd.arm[3:4]),sum(uc.arm[3:4])) 
   
-  ptests34 <- prop.test(x = ns34s, n = c(n.uc,n.mcd))
+  ptests34 <- prop.test(x = ns34s, n = c(n.mcd, n.uc))
   
   p2[m] <- ptests34$p.value
   
   # average difference in stage 4 proportions
   d[m] <- diff(ptests4$estimate)
 
-  # average confidence interval
-  cis[m] <- diff(ptests4$conf.int)
+  # average confidence intervals
+  lb1[m] <- ptests4$conf.int[1]
+  ub1[m] <- ptests4$conf.int[2]
+
+  lb2[m] <- ptests34$conf.int[1]
+  ub2[m] <- ptests34$conf.int[2]
 }
 
 # power of stage 4 shift 
@@ -82,7 +86,11 @@ signif(mean(p2 < 0.05),3)
 mean(d)
 
 # average width of confidence interval 
-mean(cis)
+mean(lb1)
+mean(ub1)
+
+mean(lb2)
+mean(ub2)
 
 # off-the shelf power calculation. (318 in each group for 80% power)
 power.prop.test(p1 = 0.43, p2 = 0.43*0.75, power = 0.8)
