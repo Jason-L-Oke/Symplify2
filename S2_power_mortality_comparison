@@ -1,0 +1,55 @@
+# Sample size for bowel cancer mortality outcomes 
+rm(list = ls())
+
+set.seed(111)
+
+M <- 50000
+prev <- 0.04
+N <- 8050 
+n1 <- n2 <- N * prev
+ref.probs <- c(0.184,0.161,0.225,0.43)
+
+mcd.probs <- c(0.184 + 0.161*0.04, 0.161*0.96 + 0.225*0.17, 0.225*0.83 + (0.43*0.25), 0.43*0.75)
+
+# Fiver year and ten year survival from bowel cancer
+srv5y <- c(0.9,0.85,0.65,0.1)
+
+# 10 year survival extrapolated from CRUK five-year survival 
+
+s1_rate <- -log(0.9)/5
+s2_rate <- -log(0.85)/5
+s3_rate <- -log(0.65)/5
+s4_rate <- -log(0.1)/5
+
+srv10y <- c(pexp(10,s1_rate,F), pexp(10,s2_rate,F), pexp(10,s3_rate,F), pexp(10,s4_rate,F))
+
+power5y <- power10y <- numeric(M)
+
+for (m in 1:M){
+  
+  # anticipated stage distribution in trial
+  mcd.arm <- rmultinom(1,n1,prob = mcd.probs)
+  uc.arm <- rmultinom(1,n2,prob = ref.probs)
+
+  # Number of deaths at five years per group  
+  d1 <- sum(uc.arm * (1 - srv5y))
+  d2 <- sum(mcd.arm * (1 - srv5y))
+
+  # Power calculation for 5 year outcomes
+  powclc1  <- power.prop.test(n = n1,p1 = d1/n1, p2 = d2/n2)
+  power5y[m] <- powclc1$power
+   
+  # Number of deaths at ten years per group  
+  d1 <- sum(uc.arm * (1 - srv10y))
+  d2 <- sum(mcd.arm * (1 - srv10y))
+
+  # Power calculation for 10 year outcomes 
+  powclc2  <- power.prop.test(n = n1,p1 = d1/n1, p2 = d2/n2)
+  power10y[m] <- powclc2$power
+}
+
+# average power at 5 years
+signif(median(power5y)*100,2)
+
+# average power at 10 years 
+signif(median(power10y)*100,2)
