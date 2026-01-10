@@ -1,0 +1,51 @@
+# Working out the numbers in the flow diagram 
+
+mu.hat <- 4.08; sig.hat <- 1.13 
+
+# median diagnostic interval
+exp(mu.hat)
+qlnorm(0.75,mu.hat, sig.hat)
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+sp <- 0.9845
+N <- 8050 
+
+# true/false pos and true/false neg fractions  
+tpf <- se*prev*N
+fnf <- (1-se)*prev*N
+fpf <- (1-sp)*(1-prev)*N
+tnf <- sp*(1-prev)*N
+
+(tpf + fnf + fpf + tnf)
+
+# positive CSO 
+round(tpf + fpf,0)
+
+# positive CSO with cancer 
+round(tpf,0)
+
+# positive CSO without cancer 
+round(fpf,0)
+
+# clinical benefit 
+plnorm(ndays,mu.hat,sig.hat,F)*round(tpf,0)
+plnorm(ndays,mu.hat,sig.hat)*round(tpf,0)
+
+# Negative CSO 
+round(fnf + tnf,0)
+
+# neg COS with cancer 
+round(fnf,0)
+
+# neg COS no cancer 
+round(tnf,0)
+
+# missed clinical benefit 
+plnorm(ndays,mu.hat,sig.hat,F)*round(fnf,0)
+plnorm(ndays,mu.hat,sig.hat)*round(fnf,0)
+
+N*prev
+
