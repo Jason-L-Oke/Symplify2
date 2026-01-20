@@ -1,0 +1,54 @@
+# Symplify 2 power calculations  --------------------------------------------- # 
+# based on comparisons of proportions. 
+
+# Conversion rate ---------------------------------------------------------
+
+# 80% power for 1.9% from 5%, and 2.3% from 6%. 
+pw <- power.prop.test(n = 120*(100/5), p1 = 0.05, power = 0.8)
+round((pw$p2-pw$p1)*100,1)
+
+pw <- power.prop.test(n = 120*(100/6), p1 = 0.06, power = 0.8)
+round((pw$p2-pw$p1)*100,1)
+
+# 90% power to detect an absolute 2.2% increase from 5%, or 2.7% from 6% 
+pw <- power.prop.test(n = 120*(100/5), p1 = 0.05, power = 0.9)
+round((pw$p2-pw$p1)*100,1)
+
+pw <- power.prop.test(n = 120*(100/6), p1 = 0.06, power = 0.9)
+round((pw$p2-pw$p1)*100,1)
+
+
+# Proportion of incurable cancers  ----------------------------------------
+
+# Assuming 43% of cancers are stage IV for this cohort in usual care, 
+# we will have 90% power to detect an absolute reduction of 12.3%, 
+# reductions in late stage cancer 
+pw <- power.prop.test(n = 322, p2 = 0.43, power = 0.9)
+round((pw$p1-pw$p2)*100,1)
+
+# and 80% power to detect an absolute reduction of 10.7%. 
+pw <- power.prop.test(n = 322, p2 = 0.43, power = 0.8)
+round((pw$p1-pw$p2)*100,1)
+
+
+# Routes to diagnosis  ----------------------------------------------------
+
+# Assuming a baseline of rate of 40%
+# 90% power for an absolute increase in USC diagnoses of 12.7%, 
+pw <- power.prop.test(n = 322, p1 = 0.4, power = 0.9)
+round((pw$p1-pw$p2)*100,1)
+
+# and 80% power for an 11% increase. 
+pw <- power.prop.test(n = 322, p1 = 0.4, power = 0.8)
+round((pw$p1-pw$p2)*100,1)
+
+
+
+# Cancer specific mortality  ----------------------------------------------
+# We will have 12.2% power to detect the estimated 
+# 5.2% absolute reduction in 5-year cancer-specific mortality calculated by the 
+# symptomatic state-transition model 
+
+1 - (179/189)
+pw <- power.prop.test(n  = 322, p1 = 189/322, p2 = 179/322)
+round(pw$power*100,1)
