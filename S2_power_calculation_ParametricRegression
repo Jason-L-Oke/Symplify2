@@ -4,18 +4,20 @@
 
 rm(list = ls())
 
-mu.hat <- 4.09; sig.hat <- 1.13 
+if (!requireNamespace("survival", quietly = TRUE)) {
+  install.packages("survival")
+}
 
-# median diagnostic interval
-exp(mu.hat)
-qlnorm(0.75,mu.hat, sig.hat)
+library(survival)
+
+mu.hat <- 4.08; sig.hat <- 1.13 
 
 prev <- 0.04
 ndays <- 42
 se <- 0.73
 effectsize <- 0.5
 
-M <- 25000
+M <- 50000
 N <- 8050 
 p <- r <- mr <- numeric(M)
 
@@ -56,14 +58,14 @@ for (m in 1:M){
   # save the p value from model 
   p[m] <- parmod.su$table[2,4]
   
-  # save the hazard ration from the test 
+  # save the hazard ratio from the test 
   r[m] <- exp(parmod.su$coefficients[2])
   
   # difference in median. 
   mr[m] <- median(mcd.arm) - median(usual.care)
 }
 
-# power 
+# power (~ 88%) 
 signif(mean(p < 0.05),2)
 
 # mean acceleration factor 
