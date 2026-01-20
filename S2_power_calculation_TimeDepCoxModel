@@ -3,11 +3,13 @@
 
 rm(list = ls())
 
-mu.hat <- 4.09; sig.hat <- 1.13 
+if (!requireNamespace("survival", quietly = TRUE)) {
+  install.packages("survival")
+}
 
-# median diagnostic interval
-exp(mu.hat)
-qlnorm(0.75,mu.hat, sig.hat)
+library(survival)
+
+mu.hat <- 4.08; sig.hat <- 1.13 
 
 prev <- 0.04
 ndays <- 42
