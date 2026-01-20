@@ -1,0 +1,65 @@
+# Simulation of Symplify 2 sample size  ----------------------------------------
+# Using a mixed effect GLM 
+rm(list = ls())
+library(lme4)
+mu.hat <- 4.08; sig.hat <- 1.13 
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+
+M <- 5000
+N <- 8050 
+p <- r <- mr <- lb <- ub <- ld <- numeric(M)
+
+set.seed(111)
+
+for (m in 1:M){
+  
+  # number of cancers expected in each group
+  n1 <- n2 <- N * prev
+  
+  # simulate diagnostic intervals for the 2 randomised groups (equal alloc)
+  usual.care <- rlnorm(n1, meanlog = mu.hat, sdlog = sig.hat)
+  mcd.arm <- rlnorm(n2, meanlog = mu.hat, sdlog = sig.hat)
+  
+  # this is the 'effect' of the MCED test
+  # test 0 = neg, 1 = pos, with prob = se.
+  mced_pos <- rbinom(n1,1,se)
+  
+  # long interval and test positive
+  ind <- mcd.arm > ndays & mced_pos == 1
+  
+  # replace relevant intervals with reduced intervals
+  mcd.arm <- replace(mcd.arm, ind , pmax(ndays,mcd.arm[ind]*effectsize))
+  
+  # truncate at 12 months 
+  mcd.arm <- mcd.arm[mcd.arm <= 365.25]
+  usual.care <- usual.care[usual.care <= 365.25]
+  
+  # number of events in each arm and person-days. 
+  n.mcd <- length(mcd.arm) ;n.uc <- length(usual.care)
+  t.mcd <- sum(mcd.arm); t.uc <- sum(usual.care)
+  
+  y <- ceiling(c(usual.care,mcd.arm))
+  x <- c(rep(0,length(usual.care)),rep(1, length(mcd.arm)))
+  
+  # dummy practice level indicator. 
+  practice_uc <- rep(1:n.uc,rpois(n.uc,2))[1:n.uc]
+  practice_mcd <- rep(1:n.mcd,rpois(n.mcd,2))[1:n.mcd]
+  practice <- c(practice_uc, practice_mcd)
+  
+  # Generalised mixed effects model 
+  mod <- glmer(y ~ x + (1|practice), family = poisson)
+  su_mix <- summary(mod)
+  
+  # p value from the mixed effects model 
+  p[m] <- su_mix$coefficients[2,4]
+  
+}
+
+# power 
+signif(mean(p < 0.05),4)
+
+
