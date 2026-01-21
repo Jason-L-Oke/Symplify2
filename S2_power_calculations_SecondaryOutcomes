@@ -1,7 +1,28 @@
 # Symplify 2 power calculations  --------------------------------------------- # 
-# based on comparisons of proportions. 
 
-# Conversion rate ---------------------------------------------------------
+# -----------------------------------------------------------------------------# 
+# calculations using 8,050 as denominator 
+# -----------------------------------------------------------------------------#
+
+# incurable cancers 
+pw <- power.prop.test(n = 8050, p2 = (0.43*322)/8050, power = 0.9)
+round((pw$p1-pw$p2)*100,2)
+
+pw <- power.prop.test(n = 8050, p2 = (0.43*322)/8050, power = 0.8)
+round((pw$p1-pw$p2)*100,2)
+
+# Routes to diagnoses 
+pw <- power.prop.test(n = 8050, p1 = (0.4*322/8050), power = 0.9)
+round((pw$p1-pw$p2)*100,2)
+
+pw <- power.prop.test(n = 8050, p1 = (0.4*322/8050), power = 0.8)
+round((pw$p1-pw$p2)*100,2)
+
+#-------------------------------------------------------------------------------
+# calculations using number of cancers as denominator 
+# ------------------------------------------------------------------------------
+
+# Conversion rate --------------------------------------------------------------
 
 # 80% power for 1.9% from 5%, and 2.3% from 6%. 
 pw <- power.prop.test(n = 120*(100/5), p1 = 0.05, power = 0.8)
