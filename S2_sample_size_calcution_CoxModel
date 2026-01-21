@@ -1,0 +1,38 @@
+# sample size justification based on formula in 
+# Survival Analysis: A Self-Learning Text. 
+# page 504
+
+# Assumptions include 
+# Equal study group sizes
+# N1 and N0 large enough to use normal approximation, i.e., Z ~ N(0,1)
+# Proportional hazards satisfied,
+
+# Delta (effect size)  = using median survival time (diagnosis time)
+
+# median time to diagnosis in mcd arm (m1) and usual care arm (m0)
+m1 <- 42
+m0 <- 55
+
+alpha <- 0.05
+beta <- 0.1
+zalpha <- qnorm(1 - alpha/2)
+zbeta <- qnorm(1 - beta)
+delta <- m1/m0
+
+# Number of events required for both groups combined
+
+(Nev <- (((zalpha + zbeta) * (delta + 1)) / ((delta - 1)))^2)
+
+# proportion with DI < 1 year - approx 5% of patients recruited
+(Nlt1y <- Nev/(1  - 0.05))
+
+# including lost to follow-up 
+(Nltf <- Nlt1y/(1 - 0.05))
+
+# scaling up for prevalence 
+Nltf/0.04
+
+# Correcting for unequal group sizes at 1 year. (3 fewer events)
+R <- 314/305
+(((zalpha + zbeta) * (R*delta + 1)) / (sqrt(R)*(delta - 1)))^2
+
