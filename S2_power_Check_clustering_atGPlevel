@@ -1,0 +1,76 @@
+# Simulation of Symplify 2 sample size  ----------------------------------------
+# Check power for clustering at GP level 
+
+rm(list = ls())
+
+library(data.table)
+library(lme4)
+
+mu.hat <- 4.08; sig.hat <- 1.13 
+
+prev <- 0.04
+ndays <- 42
+se <- 0.73
+effectsize <- 0.5
+
+M <- 50
+N <- 8050 
+p <- numeric(M)
+
+# number of cancers expected in each group
+n1 <- n2 <- N * prev
+
+# if representing GP assume 1 cancer per cluster 
+nc <- 1
+
+set.seed(111)
+
+for (m in 1:M){
+  
+  # number of clusters
+  K <- (n1 + n2)/nc
+  
+  # cluster indicator (1,2,3, etc) 
+  cluster_ind <- rep(1:K,each = nc)
+  
+  # each cluster is drawn from N(mu, sig) 
+  cluster_means <- rnorm(K,mu.hat,0.2)
+  
+  J <- K * nc
+  y <- numeric(J)
+  
+  # this simulate diagnostic interval by cluster  
+  for (j in 1:J){
+    y[j] <- rlnorm(1,meanlog = cluster_means[j], sdlog = sig.hat)
+  }
+  
+  alloc <- rbinom(n1+n2,1,0.5)
+  dt <- data.table(cluster_ind,cluster_means,y,alloc)
+  
+  # this is the 'effect' of the MCED test
+  # test 0 = neg, 1 = pos, with prob = se.
+  npr2 <- length(which(alloc==1))
+  dt[alloc==1, mcedpos := rbinom(npr2,1,se)]
+  
+  # long interval and test positive
+  dt[y > ndays & alloc == 1 & mcedpos == 1, y := pmax(ndays,y*effectsize)]
+  
+  # truncate at 12 months 
+  dt12 <- dt[y < 365.25] 
+  
+  # poisson requires integer values (of course!)
+  dt12[,y := round(y)]
+  
+  # Generalised mixed effects model 
+  # 
+  mod <- glmer(y ~ alloc + (1|cluster_ind), family = poisson, data = dt12)
+  su_mix <- summary(mod)
+  
+  # p value from the mixed effects model 
+  p[m] <- su_mix$coefficients[2,4]
+  
+}
+
+# power 
+signif(mean(p < 0.05),4)
+
